@@ -21,8 +21,12 @@ class GodelEncoder(object):
     """
 
     def __init__(self, alphabet):
-        self.symbols_dict = dict([(sym, i) for i, sym in enumerate(alphabet)])
-        self.g = len(alphabet) if hasattr(alphabet, "__len__") else alphabet.size  # Godel number for encoding
+        self.gamma = dict([(sym, i) for i, sym in enumerate(alphabet)])
+
+        if hasattr(alphabet, "__len__"):
+            self.g = len(alphabet)
+        else:
+            self.g = alphabet.size
 
     def encode_string(self, symbols_list):
         """
@@ -30,7 +34,9 @@ class GodelEncoder(object):
         """
         sym_list = symbols_list[:]
         sym_list = [sym_list] if isinstance(sym_list, str) else sym_list
-        return sum([self.symbols_dict[sym] * pow(self.g, -i) for i, sym in enumerate(sym_list, start=1)])
+
+        if sym_list:
+            return sum([self.gamma[sym] * pow(self.g, -i) for i, sym in enumerate(sym_list, start=1)])
 
     def encode_cylinder(self, symbols_list, rescale=False):
         """Return Godel encoding of cylinder set of a string (passed as a list
@@ -43,34 +49,161 @@ class GodelEncoder(object):
         """
         sym_list = symbols_list[:]
         sym_list = [sym_list] if isinstance(sym_list, str) else sym_list
-        left_bound = self.encode_string(sym_list)
+        left_bound = 0 if not sym_list else self.encode_string(sym_list)
         right_bound = left_bound + pow(self.g, -len(sym_list))
         rescale_factor = [1, self.g][rescale]
         return np.array([left_bound, right_bound])*rescale_factor
 
 
-class TMGeneralizedShift(object):
+class alphaGodelEncoder(GodelEncoder):
+
+    def __init__(self, ge_q, ge_n):
+        self.ge_q = ge_q
+        self.ge_n = ge_n
+
+    def encode_string(self, symbols_list):
+        sym_list = symbols_list[:]
+        sym_list = [sym_list] if isinstance(sym_list, str) else sym_list
+
+        if sym_list:
+            return self.ge_q.encode_string(symbols_list[0]) + \
+                self.ge_n.encode_string(symbols_list[1:])*(self.ge_q.g**-1)
+
+    def encode_cylinder(self, symbols_list):
+        """Return Godel encoding of cylinder set of a string (passed
+        as a list of symbols or a string).
+        """
+        sym_list = symbols_list[:]
+        sym_list = [sym_list] if isinstance(sym_list, str) else sym_list
+        left_bound = 0 if not sym_list else self.encode_string(sym_list)
+        right_bound = left_bound + pow(self.ge_n.g, -len(sym_list)+1)*(self.g_q.g**-1)
+        return np.array([left_bound, right_bound])
+
+
+class AbstractGeneralizedShift(object):
     """
-    The general class, not really useful now. It will be when I'll start working with TMs.
+    The general class.
     """
-    def __init__(self, alpha_symbols, beta_symbols):
-        self.alpha_symbols = alpha_symbols
-        self.beta_symbols = beta_symbols
+    def __init__(self, alpha_dod, beta_dod):
+        self.alpha_dod = alpha_dod
+        self.beta_dod = beta_dod
 
     def psi(self, alpha, beta):
         raise ValueError("Not implemented")
 
+    def lintransf_params(self, ge_alpha, ge_beta, alpha_dod, beta_dod):
+        raise ValueError("Not implemented")
 
-class SimpleCFGeneralizedShift(TMGeneralizedShift):
+
+class TMGeneralizedShift(AbstractGeneralizedShift):
+    """Class implementing a Generalized Shift simulating a Turing Machine.
+
+    :param alpha_symbols: list of symbols that can occur in alpha
+        (states + tape symbols)
+    :param beta_symbols: list of symbols that can occur in beta (tape symbols)
+    :moves: a dict of the form :math:`(q_1, \sigma_1): (q_2, \sigma_2, M)`
+        where M is a movement of the read-write head
+    """
+    def __init__(self, states, tape_symbols, moves):
+        self.alpha_dod = list(itt.product(states, tape_symbols))
+        self.beta_dod = tape_symbols
+        self.moves = moves
+
+    def psi(self, alpha, beta):
+        """Given the right and the inverted left part of a dotted sequence,
+        apply the generalized shift on them.
+
+        :param alpha: the inverted left part of a dotted sequence, a list of symbols.
+        :param beta: the right part of a dotted sequence, a list of symbols.
+        """
+
+        sub_alpha, sub_beta = self.substitution(alpha, beta)
+        shift_dir = self.F(alpha, beta)
+        return self.shift(shift_dir, sub_alpha, sub_beta)
+
+    def F(self, alpha, beta):
+        shift_dir = self.moves[(alpha[0], beta[0])][2]
+        if shift_dir == "R":
+            return 1
+        if shift_dir == "L":
+            return -1
+
+    def substitution(self, alpha, beta):
+        curr_state, curr_sym = alpha[0], beta[0]
+        new_state, new_symbol, h_mov = self.moves[(curr_state, curr_sym)]
+
+        new_alpha = alpha[:]
+        new_beta = beta[:]
+
+        if h_mov == "R":
+            new_alpha[0:2] = [new_symbol, alpha[1]]
+            new_beta[0] = new_state
+        elif h_mov == "L":
+            new_alpha[0:2] = [alpha[1], new_state]
+            new_beta[0] = new_symbol
+
+        return new_alpha, new_beta
+
+    def shift(self, shift_dir, alpha, beta):
+
+        if shift_dir == 1:
+            new_alpha = [beta[0]] + alpha
+            new_beta = beta[1:]
+        elif shift_dir == -1:
+            new_alpha = alpha[1:]
+            new_beta = alpha[0] + beta
+
+        return new_alpha, new_beta
+
+    def lintransf_params(self, ge_alpha, ge_beta, alpha_dod, beta_dod):
+
+        move = self.moves[(alpha_dod[0], beta_dod)]
+
+        shift_dir = self.F(alpha_dod, beta_dod)
+
+        ge_n, ge_q = ge_beta, ge_alpha.ge_q
+        g_n, g_q = ge_n.g, ge_q.g
+        gamma_n, gamma_q = ge_n.gamma, ge_q.gamma
+        q_old, s_old = alpha_dod[0], beta_dod[0]
+        q_new, s_new = move[0], move[1]
+        a_2 = alpha_dod[1]
+
+        if shift_dir == -1:
+            lambda_x = g_n
+            a_x = -gamma_q[q_old]*(g_q**-1)*(g_n) + \
+                gamma_q[q_new]*(g_q**-1) + \
+                -gamma_n[a_2]*(g_q**-1)
+
+            lambda_y = g_n**-1
+            a_y = -gamma_n[s_old]*(g_n**-2) + \
+                gamma_n[s_new]*(g_n**-2) + \
+                gamma_n[a_2]*(g_n**-1)
+
+        elif shift_dir == 1:
+            lambda_x = g_n**-1
+            a_x = -gamma_q[q_old]*(g_q**-1)*(g_n**-1) + \
+                gamma_q[q_new]*(g_q**-1) + \
+                gamma_n[s_new]*(g_n**-1)*(g_q**-1)
+
+            lambda_y = g_n
+            a_y = - gamma_n[s_old]
+
+        return np.array([lambda_x, a_x]), np.array([lambda_y, a_y])
+
+
+class SimpleCFGeneralizedShift(AbstractGeneralizedShift):
+
     """
     A simple parser to reproduce Peter's example.
 
     :param alpha_symbols: list of symbols in the stack alphabet
     :param beta_symbols: list of symbols in the input alphabet
+    :param grammar_rules: a list of strings in the form "X -> Y" where X is a Variable,
+        Y is a string of Variables and/or Terminals.
     """
 
-    def __init__(self, alpha_symbols, beta_symbols, grammar_rules):
-        TMGeneralizedShift.__init__(self, alpha_symbols, beta_symbols)
+    def __init__(self, alpha_dod, beta_dod, grammar_rules):
+        AbstractGeneralizedShift.__init__(self, alpha_dod, beta_dod)
         self.rules = self.cfg_rules_to_dict(grammar_rules)
 
     def psi(self, s, i):
@@ -101,12 +234,17 @@ class SimpleCFGeneralizedShift(TMGeneralizedShift):
         """
         return[(alpha_symbol, beta_symbol), ([], [])][alpha_symbol == beta_symbol]
 
+    def lintransf_params(self, ge_alpha, ge_beta, alpha_dod, beta_dod):
+        """ TODO: make this function"""
+        pass
+
     @staticmethod
     def cfg_rules_to_dict(rules):
         """Return a dictionary where each entry associates a Variable to a
         string of Terminals.
 
-        :param rules: a list of strings in the form "X -> Y" where X is a Variable, Y is a string of Variables and/or Terminals.
+        :param rules: a list of strings in the form "X -> Y" where X
+           is a Variable, Y is a string of Variables and/or Terminals.
 
         """
         producer_produced = [rule.split("->") for rule in rules]
@@ -117,19 +255,22 @@ class SimpleCFGeneralizedShift(TMGeneralizedShift):
 class NonlinearDynamicalAutomaton(object):
     """
     A Nonlinear Dynamical Automaton from a Generalized Shift and a Godel Encoding
-    
-    :param generalized_shift: a TMGeneralizedShift object, i.e. a Generalized 
-	Shift simulating a Turing Machine 
-    :param godel_enc_alpha: a GodelEncoder for the :math:`\\alpha '` reversed one-side infinite subsequence
-        of the dotted sequence :math:`\\alpha . \\beta` representing a configuration of the Turing Machine to be simulated.
-    :param godel_enc_beta: a GodelEncoder for the :math:`\\beta` one-side infinite subsequence of
-        the dotted sequence :math:`\\alpha . \\beta` representing a configuration of the Turing Machine to be simulated.
 
+    :param generalized_shift: a AbstractGeneralizedShift object, i.e. a Generalized
+        Shift simulating a Turing Machine
+    :param godel_enc_alpha: a GodelEncoder for the :math:`\\alpha '` reversed
+        one-side infinite subsequence of the dotted sequence
+        :math:`\\alpha . \\beta` representing a configuration
+         of the Turing Machine to be simulated.
+    :param godel_enc_beta: a GodelEncoder for the :math:`\\beta`
+        one-side infinite subsequence of dotted sequence
+        :math:`\\alpha . \\beta` representing a configuration
+         of the Turing Machine to be simulated.
     """
 
     def __init__(self, generalized_shift, godel_enc_alpha, godel_enc_beta):
 
-        if not isinstance(generalized_shift, TMGeneralizedShift):
+        if not isinstance(generalized_shift, AbstractGeneralizedShift):
             raise TypeError
         else:
             self.gshift = generalized_shift
@@ -141,8 +282,12 @@ class NonlinearDynamicalAutomaton(object):
             self.ga = godel_enc_alpha
             self.gb = godel_enc_beta
 
-        self.apha_lb_partns = np.array([self.ga.encode_string(stk_s) for stk_s in self.gshift.alpha_symbols])
-        self.beta_lb_partns = np.array([self.gb.encode_string(inp_s) for inp_s in self.gshift.beta_symbols])
+        self.x_leftbounds = np.array([self.ga.encode_string(stk_s) for
+                                      stk_s in self.gshift.alpha_dod])
+        self.x_leftbounds.sort()
+        self.y_leftbounds = np.array([self.gb.encode_string(inp_s) for
+                                      inp_s in self.gshift.beta_dod])
+        self.y_leftbounds.sort()
 
         self.flow_params_x, self.flow_params_y = self.calculate_flow_parameters()
         self.vflow = np.vectorize(self.flow)
@@ -158,9 +303,10 @@ class NonlinearDynamicalAutomaton(object):
         else:
             genc_x = self.ga.encode_string(x)
             genc_y = self.gb.encode_string(y)
-
-        alpha_cell = np.searchsorted(self.apha_lb_partns, genc_x, side="right") - 1
-        beta_cell = np.searchsorted(self.beta_lb_partns, genc_y, side="right") - 1
+            
+        # change with "left"?
+        alpha_cell = np.searchsorted(self.x_leftbounds, genc_x, side="right") - 1
+        beta_cell = np.searchsorted(self.y_leftbounds, genc_y, side="right") - 1
 
         return alpha_cell, beta_cell
 
@@ -169,20 +315,23 @@ class NonlinearDynamicalAutomaton(object):
         Converts the generalized shift dynamics in dynamics on the plane,
         finding the parameters of the linear transformation for each NDA cell
         """
-        params_array_x = np.zeros((self.apha_lb_partns.size, self.beta_lb_partns.size, 2))
-        params_array_y = np.zeros((self.apha_lb_partns.size, self.beta_lb_partns.size, 2))
+        params_array_x = np.zeros((self.x_leftbounds.size,
+                                   self.y_leftbounds.size, 2))
+        params_array_y = np.zeros((self.x_leftbounds.size,
+                                   self.y_leftbounds.size, 2))
 
-        for DoD in itt.product(self.gshift.alpha_symbols, self.gshift.beta_symbols):
+        for DoD in itt.product(self.gshift.alpha_dod, self.gshift.beta_dod):
+            alpha, beta = DoD
+            enc_alpha = self.ga.encode_string(alpha)
+            enc_beta = self.gb.encode_string(beta)
 
-            alpha_dod, beta_dod = DoD
-            alpha_doe, beta_doe = self.gshift.psi(alpha_dod, beta_dod)
-            enc_alpha_dod, enc_alpha_doe = self.ga.encode_cylinder(alpha_dod), self.ga.encode_cylinder(alpha_doe)
-            enc_beta_dod, enc_beta_doe = self.gb.encode_cylinder(beta_dod), self.gb.encode_cylinder(beta_doe)
+            p = self.check_cell(enc_alpha, enc_beta, gencoded=True)
 
-            p = self.check_cell(enc_alpha_dod[0], enc_beta_dod[0], gencoded=True)
+            params_x, params_y = self.gshift.lintransf_params(self.ga, self.gb, 
+                                                              alpha, beta)
 
-            params_array_x[p[0], p[1]] = np.array([np.linalg.solve(zip(enc_alpha_dod, [1, 1]), enc_alpha_doe)])
-            params_array_y[p[0], p[1]] = np.array([np.linalg.solve(zip(enc_beta_dod, [1, 1]), enc_beta_doe)])
+            params_array_x[p[0], p[1]] = params_x
+            params_array_y[p[0], p[1]] = params_y
 
         return params_array_x, params_array_y
 
@@ -193,14 +342,17 @@ class NonlinearDynamicalAutomaton(object):
 
         p_x, p_y = self.check_cell(x, y, gencoded=True)
 
-        new_x = x*self.flow_params_x[p_x, p_y, 0] + self.flow_params_x[p_x, p_y, 1]
-        new_y = y*self.flow_params_y[p_x, p_y, 0] + self.flow_params_y[p_x, p_y, 1]
+        new_x = (x*self.flow_params_x[p_x, p_y, 0] +
+                 self.flow_params_x[p_x, p_y, 1])
+        new_y = (y*self.flow_params_y[p_x, p_y, 0] +
+                 self.flow_params_y[p_x, p_y, 1])
 
         return new_x, new_y
 
     def iterate(self, init_x, init_y, n_iterations):
         """
-        Applies :math:`\Psi^n(x_0, y_0)`, where :math:`x_0` = init_x, :math:`y_0` = init_y, and :math:`n` = n_iterations
+        Applies :math:`\Psi^n(x_0, y_0)`, where :math:`x_0` = init_x, :math:`y_0`
+            = init_y, and :math:`n` = n_iterations
         """
         x = init_x
         y = init_y
