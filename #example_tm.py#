@@ -21,7 +21,7 @@ ge_alpha = NDA.alphaGodelEncoder(ge_q, ge_n)
 ge_beta = ge_n
 
 init_state = ge_alpha.encode_string(["q_{even}", "\sqcup"])
-init_tape = ge_n.encode_string(list("111"))
+init_tape = ge_n.encode_string(list("1111"))
 
 tm_gs = NDA.TMGeneralizedShift(states, tape_symbols, tm_descr)
 nda = NDA.NonlinearDynamicalAutomaton(tm_gs, ge_alpha, ge_beta)
@@ -42,8 +42,8 @@ x_states, y_states = zip(*tm_nn_states)
 ax2.plot(x_states, y_states, linestyle="", marker=".", ms=10)
 
 states_old = None
-for i, tm_nn_state in enumerate(tm_nn_states):y
-
+for i, tm_nn_state in enumerate(tm_nn_states):
+    
     if tm_nn_state == states_old:
         break
 
@@ -52,6 +52,7 @@ for i, tm_nn_state in enumerate(tm_nn_states):y
                  xytext= (tm_nn_state[0]-0.03, 
                           tm_nn_state[1]+0.01), 
                  size=15)
+
 
     states_old = tm_nn_state
 

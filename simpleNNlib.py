@@ -142,4 +142,4 @@ class Connection():
         self.sender = from_layer
         self.receiver = to_layer
         self.conn_mat = to_layer._add_connection(from_layer, connection_matrix)
-        Connection.keep_track[to_layer].append(from_layer)
+        Connection.keep_track[to_layer].append(from_layer) 

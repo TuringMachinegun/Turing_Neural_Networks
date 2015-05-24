@@ -11,7 +11,19 @@ import numpy as np
 import itertools as itt
 
 
-class GodelEncoder(object):
+class FractalEncoder(object):
+
+    def __init__(self):
+        raise ValueError("Not implemented")
+
+    def encode_string(self, symbols_list):
+        raise ValueError("Not implemented")
+
+    def encode_cylinder(self, symbols_list):
+        raise ValueError("Not implemented")    
+
+
+class GodelEncoder(FractalEncoder):
     """ Create a Godel Encoding given an alphabet.
     Given the encoding, you can then encode strings as simple numbers
     or cylinder sets (defined by their upper and lower bounds)
@@ -55,7 +67,7 @@ class GodelEncoder(object):
         return np.array([left_bound, right_bound])*rescale_factor
 
 
-class alphaGodelEncoder(GodelEncoder):
+class alphaGodelEncoder(FractalEncoder):
 
     def __init__(self, ge_q, ge_n):
         self.ge_q = ge_q
@@ -106,7 +118,7 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
     """
     def __init__(self, states, tape_symbols, moves):
         self.alpha_dod = list(itt.product(states, tape_symbols))
-        self.beta_dod = tape_symbols
+        self.beta_dod = [[x] for x in tape_symbols]
         self.moves = moves
 
     def psi(self, alpha, beta):
@@ -123,10 +135,7 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
 
     def F(self, alpha, beta):
         shift_dir = self.moves[(alpha[0], beta[0])][2]
-        if shift_dir == "R":
-            return 1
-        if shift_dir == "L":
-            return -1
+        return {"L": -1, "S": 0, "R": 1}[shift_dir]
 
     def substitution(self, alpha, beta):
         curr_state, curr_sym = alpha[0], beta[0]
@@ -138,6 +147,9 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
         if h_mov == "R":
             new_alpha[0:2] = [new_symbol, alpha[1]]
             new_beta[0] = new_state
+        elif h_mov == "S":
+            new_alpha[0] = new_state
+            new_beta[0] = new_symbol
         elif h_mov == "L":
             new_alpha[0:2] = [alpha[1], new_state]
             new_beta[0] = new_symbol
@@ -149,6 +161,11 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
         if shift_dir == 1:
             new_alpha = [beta[0]] + alpha
             new_beta = beta[1:]
+
+        elif shift_dir == 0:
+            new_alpha = alpha
+            new_beta = beta
+
         elif shift_dir == -1:
             new_alpha = alpha[1:]
             new_beta = alpha[0] + beta
@@ -157,7 +174,7 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
 
     def lintransf_params(self, ge_alpha, ge_beta, alpha_dod, beta_dod):
 
-        move = self.moves[(alpha_dod[0], beta_dod)]
+        move = self.moves[(alpha_dod[0], beta_dod[0])]
 
         shift_dir = self.F(alpha_dod, beta_dod)
 
@@ -178,6 +195,10 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
             a_y = -gamma_n[s_old]*(g_n**-2) + \
                 gamma_n[s_new]*(g_n**-2) + \
                 gamma_n[a_2]*(g_n**-1)
+
+        elif shift_dir == 0:
+            lambda_x = lambda_y = 1.0
+            a_x = a_y = 0.0
 
         elif shift_dir == 1:
             lambda_x = g_n**-1
@@ -275,8 +296,8 @@ class NonlinearDynamicalAutomaton(object):
         else:
             self.gshift = generalized_shift
 
-        if not (isinstance(godel_enc_alpha, GodelEncoder)
-                and isinstance(godel_enc_beta, GodelEncoder)):
+        if not (isinstance(godel_enc_alpha, FractalEncoder)
+                and isinstance(godel_enc_beta, FractalEncoder)):
             raise TypeError
         else:
             self.ga = godel_enc_alpha
