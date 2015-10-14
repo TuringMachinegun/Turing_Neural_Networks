@@ -1,4 +1,5 @@
-__author__ = 'Giovanni Carmantini'
+__author__ = 'Giovanni Sirio Carmantini'
+__version__ = 0.1
 
 import numpy as np
 from collections import defaultdict

@@ -1,27 +1,20 @@
-I tried to make the code as simple and readable as possible, and documented 
-the majority of it, in addition Python is naturally quite simple to read, so 
-hopefully you should be able to get what's going on in the code even without 
-knowing the language.
+INSTALLATION
+============
 
-##############################################################################
+These modules have been coded in Python 2.7.
 
-				CODE STRUCTURE
+The modules simpleNNlib, symdyn and neuraltm depend on the Python
+scientific computing library NumPy (version 1.8.2).
 
-##############################################################################
+Together with the core modules, code is included reproducing the
+example in "From Neural Networks to Turing Machines, parsimoniously".
+The example code has an additional dependence on the Python plotting
+library Matplotlib (version 1.4.3).
 
-in NDA you have all the classes to make an NDA:
-- A class implementing the generalized shift
-- A class implementing a Godel encoder
-- A class implementing the NDA from a generalized shift and a Godel encoder
+The easiest way to install Python 2.7, NumPy and Matplotlib is to
+download Anaconda, a Python distribution including a selection of the
+most important scientific libraries, available at
+http://www.scipy.org/scipylib/download.html.
 
-In simpleNNlib.py I implemented some stuff to build simple neural networks with 
-saturated-linear activation function and Heaviside activation function.
-
-In NeuralTM.py I implement the Neural Network we are presenting in the paper,
-ugin simpleNNlib.py to make the neurons and connections, and NDA.py to get the 
-weights for the linear transformation layer.
-
-In examplenet.py I actually use these libraries to reproduce Peter's example
-parser.
-
-
+For the most up-to-date code and documentation, check 
+https://github.com/TuringApproved/Turing_Neural_Networks

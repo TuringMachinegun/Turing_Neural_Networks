@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sphinx-build -b latex ./source ./source/_build
+make -C ./source/_build all
+mv ./source/_build/NDANeuralNetwork.pdf ./NDANeuralNetwork_doc.pdf
