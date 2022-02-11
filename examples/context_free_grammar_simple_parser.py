@@ -27,7 +27,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from plot_symbologram import plot_sym
 import numpy as np
-from time import sleep
 
 # CFG description
 input_symbols = ["NP", "V"]
@@ -58,6 +57,7 @@ nda_states = nda.iterate(init_stack, init_input, 6)
 cfg_states = cfg_nn.run_net(init_x=init_stack, init_y=init_input, n_iterations=6)
 
 # and plot
+base_z_order = 10
 plt.ion()
 plt.style.use("ggplot")
 fig = plt.figure(figsize=[5, 5])
@@ -71,28 +71,46 @@ ax2.set_xlabel("$c_x$ activation", size=15)
 ax2.set_ylabel("$c_y$ activation", size=15)
 plt.tight_layout()
 
-states_old = None
-for i, cfg_state in enumerate(cfg_states):
+# widths of x and y cells
+x_cell_w = nda.x_leftbounds[1] - nda.x_leftbounds[0]
+y_cell_w = nda.y_leftbounds[1] - nda.y_leftbounds[0]
 
-    if np.array_equal(cfg_state, states_old):
-        break
-    x, y = cfg_state[0][0], cfg_state[1][0]
-    w_x = cfg_state[0][1] - x
-    w_y = cfg_state[1][1] - y
+def run(plot_cells=False):
+    """
+    :param plot_cells: If True, plot the whole cell containing the current state,
+       rather than the rectangle corresponding to its cylinder representation.
+    """
+    states_old = None
+    for i, cfg_state in enumerate(cfg_states):
+        if np.array_equal(cfg_state, states_old):
+            break
 
-    ax2.add_patch(Rectangle((x, y), w_x, w_y, facecolor="blue", zorder=i))
+        if plot_cells:
+            y_cell, x_cell = nda.check_cell(cfg_state[0][0], cfg_state[1][0], gencoded=True)
+            x, y = nda.x_leftbounds[x_cell], nda.y_leftbounds[y_cell]
+            w_x, w_y = x_cell_w, y_cell_w
+        else:
+            x, y = cfg_state[0][0], cfg_state[1][0]
+            w_x = cfg_state[0][1] - x
+            w_y = cfg_state[1][1] - y
 
-    ax2.annotate(
-        "{}".format(i + 1),
-        xy=(cfg_state[0][0], cfg_state[1][0]),
-        xytext=(x + w_x / 2.0, y + w_y / 2.0),
-        size=15,
-        zorder=i,
-    )
+        rect = Rectangle((x, y), w_x, w_y, facecolor="orange", edgecolor="black", zorder=base_z_order + i)
+        ax2.add_patch(rect)
 
-    states_old = cfg_state
-    plt.draw()
-    plt.pause(1)
+        ax2.annotate(
+            "{}".format(i + 1),
+            xy=(x, y),
+            xytext=(x + w_x / 2.0, y + w_y / 2.0),
+            size=15,
+            zorder=base_z_order + i,
+        )
+
+        states_old = cfg_state
+        plt.draw()
+        plt.pause(1)
+
+
+run(plot_cells=False)
 
 print(
     "total number of neurons: {}".format(
