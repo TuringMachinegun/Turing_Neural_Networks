@@ -1,4 +1,4 @@
-__author__ = 'Giovanni Sirio Carmantini'
+__author__ = "Giovanni Sirio Carmantini"
 
 """In this file we reproduce the simple parser from beim Graben, P.,
  & Potthast, R. (2014). Universal neural field computation. In Neural
@@ -15,6 +15,7 @@ and visualized.
 import os.path
 import sys
 import inspect
+
 curr_file_path = os.path.realpath(inspect.getfile(inspect.currentframe()))
 curr_dir_path = os.path.dirname(curr_file_path)
 parent_dir = os.path.join(curr_dir_path, os.path.pardir)
@@ -31,24 +32,22 @@ from time import sleep
 # CFG description
 input_symbols = ["NP", "V"]
 stack_symbols = ["NP", "V", "VP", "S"]
-parser_descr = {"S": ["NP", "VP"],
-                "VP": ["V", "NP"],
-                }
+parser_descr = {
+    "S": ["NP", "VP"],
+    "VP": ["V", "NP"],
+}
 
 # Godel Encoders
 ge_s = symdyn.GodelEncoder(stack_symbols)
 ge_i = symdyn.GodelEncoder(input_symbols)
 
 # CFG -> GS
-cfg_gs = symdyn.SimpleCFGeneralizedShift(stack_symbols,
-                                         input_symbols,
-                                         parser_descr)
+cfg_gs = symdyn.SimpleCFGeneralizedShift(stack_symbols, input_symbols, parser_descr)
 # GS -> NDA
 nda = symdyn.NonlinearDynamicalAutomaton(cfg_gs, ge_s, ge_i)
 
 # NDA -> R-ANN
-cfg_nn = neuraltm.NeuralTM(nda,
-                           cylinder_sets=True)
+cfg_nn = neuraltm.NeuralTM(nda, cylinder_sets=True)
 
 # initial conditions
 init_stack = ge_s.encode_cylinder("S")
@@ -56,8 +55,7 @@ init_input = ge_i.encode_cylinder(["NP", "V", "NP"])
 
 # simulate NDA and R-ANN dynamics
 nda_states = nda.iterate(init_stack, init_input, 6)
-cfg_states = cfg_nn.run_net(init_x=init_stack, init_y=init_input,
-                            n_iterations=6)
+cfg_states = cfg_nn.run_net(init_x=init_stack, init_y=init_input, n_iterations=6)
 
 # and plot
 plt.ion()
@@ -84,17 +82,24 @@ for i, cfg_state in enumerate(cfg_states):
 
     ax2.add_patch(Rectangle((x, y), w_x, w_y, facecolor="blue", zorder=i))
 
-    ax2.annotate("{}".format(i + 1),
-                 xy=(cfg_state[0][0], cfg_state[1][0]),
-                 xytext= (x + w_x / 2.0, y + w_y / 2.0),
-                 size=15, zorder=i)
+    ax2.annotate(
+        "{}".format(i + 1),
+        xy=(cfg_state[0][0], cfg_state[1][0]),
+        xytext=(x + w_x / 2.0, y + w_y / 2.0),
+        size=15,
+        zorder=i,
+    )
 
     states_old = cfg_state
     plt.draw()
     plt.pause(1)
 
-print "total number of neurons: {}".format(cfg_nn.LTL.n_units +
-                                           cfg_nn.BSLbx.n_units +
-                                           cfg_nn.BSLby.n_units +
-                                           cfg_nn.MCLx.n_units +
-                                           cfg_nn.MCLy.n_units)
+print(
+    "total number of neurons: {}".format(
+        cfg_nn.LTL.n_units
+        + cfg_nn.BSLbx.n_units
+        + cfg_nn.BSLby.n_units
+        + cfg_nn.MCLx.n_units
+        + cfg_nn.MCLy.n_units
+    )
+)

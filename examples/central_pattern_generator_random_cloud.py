@@ -1,4 +1,4 @@
-__author__ = 'Giovanni Sirio Carmantini'
+__author__ = "Giovanni Sirio Carmantini"
 
 """In this file, a R-ANN is constructed from a sample Turing Machine.
 
@@ -16,6 +16,7 @@ conditions and visualized.
 import os.path
 import sys
 import inspect
+
 curr_file_path = os.path.realpath(inspect.getfile(inspect.currentframe()))
 curr_dir_path = os.path.dirname(curr_file_path)
 parent_dir = os.path.join(curr_dir_path, os.path.pardir)
@@ -29,14 +30,16 @@ import numpy as np
 # Turing Machine description (latex syntax for typesetting in plot)
 tape_symbols = ["1", "2", "3", "4"]
 states = ["w", "g"]
-tm_descr = {("w", "1"): ("w", "3", "S"),
-            ("w", "2"): ("w", "4", "S"),
-            ("w", "3"): ("w", "2", "S"),
-            ("w", "4"): ("w", "1", "S"),
-            ("g", "1"): ("g", "2", "S"),
-            ("g", "2"): ("g", "3", "S"),
-            ("g", "3"): ("g", "4", "S"),
-            ("g", "4"): ("g", "1", "S")}
+tm_descr = {
+    ("w", "1"): ("w", "3", "S"),
+    ("w", "2"): ("w", "4", "S"),
+    ("w", "3"): ("w", "2", "S"),
+    ("w", "4"): ("w", "1", "S"),
+    ("g", "1"): ("g", "2", "S"),
+    ("g", "2"): ("g", "3", "S"),
+    ("g", "3"): ("g", "4", "S"),
+    ("g", "4"): ("g", "1", "S"),
+}
 
 # create encoders for states and tape symbols
 ge_q = symdyn.GodelEncoder(states)
@@ -72,16 +75,19 @@ def rand_cloud_run(xs, ys, n_iter):
         tm_nn.set_init_cond(x, y)
 
         for j in range(n_iter):
-            MCL_acts = np.concatenate(
-                (tm_nn.MCLx.activation, tm_nn.MCLy.activation))
+            MCL_acts = np.concatenate((tm_nn.MCLx.activation, tm_nn.MCLy.activation))
             tm_nn.run_net()
-            all_acts = np.concatenate((
-                MCL_acts,
-                tm_nn.BSLbx.activation,
-                tm_nn.BSLby.activation,
-                tm_nn.LTL.activation))
+            all_acts = np.concatenate(
+                (
+                    MCL_acts,
+                    tm_nn.BSLbx.activation,
+                    tm_nn.BSLby.activation,
+                    tm_nn.LTL.activation,
+                )
+            )
             mean_acts[i, j] = np.mean(all_acts)
     return np.mean(mean_acts, axis=0), np.std(mean_acts, axis=0)
+
 
 n_iter = 32
 n_init_conds = 100
@@ -99,12 +105,14 @@ plt.ion()
 plt.figure(figsize=[8, 4])
 plt.style.use("ggplot")
 
-plt.fill_between(range(n_iter), walk_means - walk_std, walk_means + walk_std,
-                 color="cornflowerblue")
+plt.fill_between(
+    range(n_iter), walk_means - walk_std, walk_means + walk_std, color="cornflowerblue"
+)
 plt.plot(range(n_iter), walk_means, label="Walk gait", color="lightblue", lw=2)
 
-plt.fill_between(range(n_iter), gall_means - gall_std, gall_means + gall_std,
-                 color="lightpink")
+plt.fill_between(
+    range(n_iter), gall_means - gall_std, gall_means + gall_std, color="lightpink"
+)
 plt.plot(range(n_iter), gall_means, label="Gallop gait", color="red", lw=2)
 
 

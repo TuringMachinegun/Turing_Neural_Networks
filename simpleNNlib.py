@@ -1,4 +1,4 @@
-__author__ = 'Giovanni Sirio Carmantini'
+__author__ = "Giovanni Sirio Carmantini"
 __version__ = 0.1
 
 import numpy as np
@@ -17,8 +17,8 @@ class AbstractNNLayer(object):
     a heaviside layer will use a heaviside function, etc...
 
     :param n_units: the number of units in the layer
-    :param initial_values: a list of activation values with which the units will be 
-	initialized
+    :param initial_values: a list of activation values with which the units will be
+        initialized
     """
 
     def __init__(self, n_units, initial_values=[]):
@@ -30,22 +30,22 @@ class AbstractNNLayer(object):
             self.activation = np.array(initial_values)
             if self.activation.size != n_units:
                 raise ValueError("initializing with wrong number of values.")
-        self.transfer_function = None  # this is the abstract class, need to implement a specific one
+        self.transfer_function = (
+            None  # this is the abstract class, need to implement a specific one
+        )
 
     def _add_connection(self, from_layer, connection_matrix):
-	"""
-	Add a connection from from_layer to this layer, with weights as in connection_matrix.
-	Return the connection matrix, so that it is possible to edit it subsequently.
-	:warning: don't use this function directly, rely on Connection class to establish connections.
-	"""
+        """
+        Add a connection from from_layer to this layer, with weights as in connection_matrix.
+        Return the connection matrix, so that it is possible to edit it subsequently.
+        :warning: don't use this function directly, rely on Connection class to establish connections.
+        """
         conn_mat = np.array(connection_matrix)
         self.connections.append((from_layer, conn_mat))
         return conn_mat
 
     def sum_input(self):
-	"""
-	Computes the input contribution from connected layers.
-	"""
+        """Computes the input contribution from connected layers."""
         running_sum = np.zeros(self.n_units)
         if self.connections:
             for from_layer, connection_matrix in self.connections:
@@ -56,9 +56,7 @@ class AbstractNNLayer(object):
         return running_sum
 
     def activate(self):
-	"""
-	Computes the units activation.
-	"""
+        """Computes the units activation."""
         self.activation = self.transfer_function(self.sum_input())
 
     def __getitem__(self, item):
@@ -71,26 +69,32 @@ class HeavisideLayer(AbstractNNLayer):
 
     :param n_units: number of units in layer.
     :param centers: specifies :math:`c_i` for each unit :math:`i` , given the unit activation function :math:`H_i(x-c_i)` .
-	Equivalent to adding a bias of :math:`-c_i` .
-    :param inclusive: if :math:`H_i(-c_i)=1`, the :math:`i`-th item in the list is True, 
-	otherwise it's False and :math:`H_i(-c_i)=0`.
+        Equivalent to adding a bias of :math:`-c_i` .
+    :param inclusive: if :math:`H_i(-c_i)=1`, the :math:`i`-th item in the list is True,
+        otherwise it's False and :math:`H_i(-c_i)=0`.
     """
 
     def __init__(self, n_units, centers, inclusive=[]):
         AbstractNNLayer.__init__(self, n_units)
         self.centers = np.array(centers)
-        self.inclusive = np.array(inclusive, dtype=bool) if inclusive else np.zeros(n_units, dtype=bool)
+        self.inclusive = (
+            np.array(inclusive, dtype=bool)
+            if inclusive
+            else np.zeros(n_units, dtype=bool)
+        )
         if not self.centers.size == self.inclusive.size == self.n_units:
             raise ValueError("Array must be of the same size as layer.")
         self.exclusive = np.invert(self.inclusive)
 
     def activate(self):
-	"""
-	Computes the units activation
-	"""
+        """Computes the units activation"""
         inp_sum = self.sum_input()
-        self.activation[self.inclusive] = (inp_sum[self.inclusive] >= self.centers[self.inclusive]).astype(int)
-        self.activation[self.exclusive] = (inp_sum[self.exclusive] > self.centers[self.exclusive]).astype(int)
+        self.activation[self.inclusive] = (
+            inp_sum[self.inclusive] >= self.centers[self.inclusive]
+        ).astype(int)
+        self.activation[self.exclusive] = (
+            inp_sum[self.exclusive] > self.centers[self.exclusive]
+        ).astype(int)
         return self.activation
 
 
@@ -112,11 +116,12 @@ class RampLayer(AbstractNNLayer):
         return self.activation
 
 
-class LayerSlice():
+class LayerSlice:
     """
     This class is used so that to access the activation for a given layer *nnlayer*,
     you can just use the notation *nnlayer[someslice]*, where *someslice* is the usual Python slice.
     """
+
     def __init__(self, layer, a_slice):
         self.layer = layer
         self.a_slice = a_slice
@@ -127,7 +132,7 @@ class LayerSlice():
     activation = property(get_activation)
 
 
-class Connection():
+class Connection:
     """
     Class implementing a connection. Basically used to keep track of who is connected to who at this moment.
     Also, you can modify the connection by modifying conn_mat.
@@ -136,6 +141,7 @@ class Connection():
     :param to_layer: layer to which the connection is established.
     :param connection_matrix: matrix specifying connections and weights.
     """
+
     # I don't remember why I wanted to keep track of all connections, I don't use this anywhere
     keep_track = defaultdict(list)
 
@@ -143,4 +149,4 @@ class Connection():
         self.sender = from_layer
         self.receiver = to_layer
         self.conn_mat = to_layer._add_connection(from_layer, connection_matrix)
-        Connection.keep_track[to_layer].append(from_layer) 
+        Connection.keep_track[to_layer].append(from_layer)

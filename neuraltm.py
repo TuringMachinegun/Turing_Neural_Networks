@@ -1,11 +1,11 @@
-__author__ = 'Giovanni Sirio Carmantini'
+__author__ = "Giovanni Sirio Carmantini"
 __version__ = 0.1
 
 import simpleNNlib as snn
 import numpy as np
 
 
-class NeuralTM():
+class NeuralTM:
 
     """Given an NDA, constructs the equivalent neural network described in
     our submitted paper.
@@ -39,41 +39,39 @@ class NeuralTM():
 
         # construct input layer
 
-        self.MCLx = snn.RampLayer(
-            self.d_factor, initial_values=[0.0] * self.d_factor)
-        self.MCLy = snn.RampLayer(
-            self.d_factor, initial_values=[0.0] * self.d_factor)
+        self.MCLx = snn.RampLayer(self.d_factor, initial_values=[0.0] * self.d_factor)
+        self.MCLy = snn.RampLayer(self.d_factor, initial_values=[0.0] * self.d_factor)
 
         # construct cell selection layer
 
-        self.BSLbx = snn.HeavisideLayer(self.x_nsymbols,
-                                        centers=self.x_leftbounds,
-                                        inclusive=[1] * self.x_nsymbols)
-        self.BSLby = snn.HeavisideLayer(self.y_nsymbols,
-                                        centers=self.y_leftbounds,
-                                        inclusive=[1] * self.y_nsymbols)
+        self.BSLbx = snn.HeavisideLayer(
+            self.x_nsymbols, centers=self.x_leftbounds, inclusive=[1] * self.x_nsymbols
+        )
+        self.BSLby = snn.HeavisideLayer(
+            self.y_nsymbols, centers=self.y_leftbounds, inclusive=[1] * self.y_nsymbols
+        )
 
         if self.cylinder_sets:
-            snn.Connection(self.MCLx, self.BSLbx,
-                           [[1] * self.x_nsymbols, [0] * self.x_nsymbols])
-            snn.Connection(self.MCLy, self.BSLby,
-                           [[1] * self.y_nsymbols, [0] * self.y_nsymbols])
+            snn.Connection(
+                self.MCLx, self.BSLbx, [[1] * self.x_nsymbols, [0] * self.x_nsymbols]
+            )
+            snn.Connection(
+                self.MCLy, self.BSLby, [[1] * self.y_nsymbols, [0] * self.y_nsymbols]
+            )
         else:
-            snn.Connection(self.MCLx, self.BSLbx,
-                           np.array([[1] * self.x_nsymbols]))
-            snn.Connection(self.MCLy, self.BSLby,
-                           np.array([[1] * self.y_nsymbols]))
+            snn.Connection(self.MCLx, self.BSLbx, np.array([[1] * self.x_nsymbols]))
+            snn.Connection(self.MCLy, self.BSLby, np.array([[1] * self.y_nsymbols]))
 
         # construct linear transformation layer
 
         if self.cylinder_sets:
-            self.LTL = snn.RampLayer(self.nbranches * 2 * 2,
-                                     biases=self.LTL_biases_from_params()
-                                     - self.h)
+            self.LTL = snn.RampLayer(
+                self.nbranches * 2 * 2, biases=self.LTL_biases_from_params() - self.h
+            )
         else:
-            self.LTL = snn.RampLayer(self.nbranches * 2,
-                                     biases=self.LTL_biases_from_params()
-                                     - self.h)
+            self.LTL = snn.RampLayer(
+                self.nbranches * 2, biases=self.LTL_biases_from_params() - self.h
+            )
 
         BSLbx_LTL_cnmat = self.cn_BSLbx_LTL()
         BSLby_LTL_cnmat = self.cn_BSLby_LTL()
@@ -108,11 +106,9 @@ class NeuralTM():
 
             # set all connections to 0 first
             if self.cylinder_sets:
-                cell_cn_mat = np.zeros((self.y_nsymbols,
-                                        self.x_nsymbols, 2, 2))
+                cell_cn_mat = np.zeros((self.y_nsymbols, self.x_nsymbols, 2, 2))
             else:
-                cell_cn_mat = np.zeros((self.y_nsymbols,
-                                        self.x_nsymbols, 2))
+                cell_cn_mat = np.zeros((self.y_nsymbols, self.x_nsymbols, 2))
 
             # then make the relevant ones equal to h/2
             cell_cn_mat[:, col_j] = self.h / 2
@@ -140,11 +136,9 @@ class NeuralTM():
 
             # set all connections to 0 first
             if self.cylinder_sets:
-                cell_cn_mat = np.zeros((self.y_nsymbols,
-                                        self.x_nsymbols, 2, 2))
+                cell_cn_mat = np.zeros((self.y_nsymbols, self.x_nsymbols, 2, 2))
             else:
-                cell_cn_mat = np.zeros((self.y_nsymbols,
-                                        self.x_nsymbols, 2))
+                cell_cn_mat = np.zeros((self.y_nsymbols, self.x_nsymbols, 2))
 
             # then make the relevant ones equal to h/2
             cell_cn_mat[row_i] = self.h / 2

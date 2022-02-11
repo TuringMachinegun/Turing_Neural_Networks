@@ -1,4 +1,4 @@
-__author__ = 'Giovanni Sirio Carmantini'
+__author__ = "Giovanni Sirio Carmantini"
 __version__ = 0.1
 
 """
@@ -71,8 +71,12 @@ class GodelEncoder(FractalEncoder):
         sym_list = as_list(sequence)
 
         if sym_list:
-            return sum([self.gamma[sym] * pow(self.g, -i)
-                        for i, sym in enumerate(sym_list, start=1)])
+            return sum(
+                [
+                    self.gamma[sym] * pow(self.g, -i)
+                    for i, sym in enumerate(sym_list, start=1)
+                ]
+            )
 
     def encode_cylinder(self, sequence, rescale=False):
         """Return Godel encoding of cylinder set of a sequence (passed as a
@@ -117,8 +121,9 @@ class compactGodelEncoder(FractalEncoder):
         sym_list = as_list(sequence)
 
         if sym_list:
-            return self.ge_q.encode_sequence(sym_list[0]) + \
-                self.ge_s.encode_sequence(sym_list[1:]) * (self.ge_q.g ** -1)
+            return self.ge_q.encode_sequence(sym_list[0]) + self.ge_s.encode_sequence(
+                sym_list[1:]
+            ) * (self.ge_q.g**-1)
 
     def encode_cylinder(self, sequence):
         """Return Godel encoding of cylinder set of a sequence (passed as a
@@ -130,8 +135,9 @@ class compactGodelEncoder(FractalEncoder):
         sym_list = as_list(sequence)
 
         left_bound = 0 if not sym_list else self.encode_sequence(sym_list)
-        right_bound = left_bound + \
-            pow(self.ge_s.g, -len(sym_list) + 1) * (self.g_q.g ** -1)
+        right_bound = left_bound + pow(self.ge_s.g, -len(sym_list) + 1) * (
+            self.g_q.g**-1
+        )
         return np.array([left_bound, right_bound])
 
 
@@ -171,13 +177,13 @@ class SimpleCFGeneralizedShift(AbstractGeneralizedShift):
         self.rules = grammar_rules
 
     def psi(self, alpha, beta):
-        """Apply Generalized Shift phi to dotted sequence.
-        """
+        """Apply Generalized Shift phi to dotted sequence."""
         alpha_symbols = as_list(alpha)
         beta_symbols = as_list(beta)
         # if can't predict (predict returns False), attach
-        return self.predict(alpha_symbols, beta_symbols) or \
-            self.attach(alpha_symbols, beta_symbols)
+        return self.predict(alpha_symbols, beta_symbols) or self.attach(
+            alpha_symbols, beta_symbols
+        )
 
     def predict(self, alpha, beta):
         """If a rule is present defining how to substitute the symbol in the
@@ -229,22 +235,18 @@ class SimpleCFGeneralizedShift(AbstractGeneralizedShift):
         alpha_head = as_list(alpha)[0] if alpha else []
         beta_head = as_list(beta)[0] if alpha else []
 
-        enc_alpha_dod = ge_alpha.encode_sequence(alpha_head) \
-            if alpha_head else 0.0
-        enc_beta_dod = ge_beta.encode_sequence(beta_head) \
-            if beta_head else 0.0
+        enc_alpha_dod = ge_alpha.encode_sequence(alpha_head) if alpha_head else 0.0
+        enc_beta_dod = ge_beta.encode_sequence(beta_head) if beta_head else 0.0
 
         new_alpha, new_beta = self.psi(alpha_head, beta_head)
 
-        enc_new_alpha = ge_alpha.encode_sequence(
-            new_alpha) if new_alpha else 0.0
-        enc_new_beta = ge_beta.encode_sequence(
-            new_beta) if new_beta else 0.0
+        enc_new_alpha = ge_alpha.encode_sequence(new_alpha) if new_alpha else 0.0
+        enc_new_beta = ge_beta.encode_sequence(new_beta) if new_beta else 0.0
 
         lambda_x = ge_alpha.g ** (-len(new_alpha) + 1)
-        a_x = - enc_alpha_dod * lambda_x + enc_new_alpha
+        a_x = -enc_alpha_dod * lambda_x + enc_new_alpha
         lambda_y = ge_beta.g ** (-len(new_beta) + 1)
-        a_y = - enc_beta_dod * lambda_y + enc_new_beta
+        a_y = -enc_beta_dod * lambda_y + enc_new_beta
 
         return np.array([lambda_x, a_x]), np.array([lambda_y, a_y])
 
@@ -317,8 +319,7 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
         return new_alpha, new_beta
 
     def shift(self, shift_dir, alpha, beta):
-        """Shift dotted sequence left or right (shift_dir = -1 or 1).
-        """
+        """Shift dotted sequence left or right (shift_dir = -1 or 1)."""
 
         if shift_dir == 1:
             new_alpha = [beta[0]] + alpha
@@ -361,28 +362,34 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
 
         if shift_dir == -1:
             lambda_x = g_n
-            a_x = -gamma_q[q_old] * (g_q ** -1) * (g_n) + \
-                gamma_q[q_new] * (g_q ** -1) + \
-                -gamma_n[a_2] * (g_q ** -1)
+            a_x = (
+                -gamma_q[q_old] * (g_q**-1) * (g_n)
+                + gamma_q[q_new] * (g_q**-1)
+                + -gamma_n[a_2] * (g_q**-1)
+            )
 
-            lambda_y = g_n ** -1
-            a_y = -gamma_n[s_old] * (g_n ** -2) + \
-                gamma_n[s_new] * (g_n ** -2) + \
-                gamma_n[a_2] * (g_n ** -1)
+            lambda_y = g_n**-1
+            a_y = (
+                -gamma_n[s_old] * (g_n**-2)
+                + gamma_n[s_new] * (g_n**-2)
+                + gamma_n[a_2] * (g_n**-1)
+            )
 
         elif shift_dir == 0:
             lambda_x = lambda_y = 1.0
-            a_x = (-gamma_q[q_old] + gamma_q[q_new]) * (g_q ** -1)
-            a_y = (-gamma_n[s_old] + gamma_n[s_new]) * (g_n ** -1)
+            a_x = (-gamma_q[q_old] + gamma_q[q_new]) * (g_q**-1)
+            a_y = (-gamma_n[s_old] + gamma_n[s_new]) * (g_n**-1)
 
         elif shift_dir == 1:
-            lambda_x = g_n ** -1
-            a_x = -gamma_q[q_old] * (g_q ** -1) * (g_n ** -1) + \
-                gamma_q[q_new] * (g_q ** -1) + \
-                gamma_n[s_new] * (g_n ** -1) * (g_q ** -1)
+            lambda_x = g_n**-1
+            a_x = (
+                -gamma_q[q_old] * (g_q**-1) * (g_n**-1)
+                + gamma_q[q_new] * (g_q**-1)
+                + gamma_n[s_new] * (g_n**-1) * (g_q**-1)
+            )
 
             lambda_y = g_n
-            a_y = - gamma_n[s_old]
+            a_y = -gamma_n[s_old]
 
         return np.array([lambda_x, a_x]), np.array([lambda_y, a_y])
 
@@ -414,18 +421,22 @@ class NonlinearDynamicalAutomaton(object):
         else:
             self.gshift = generalized_shift
 
-        if not (isinstance(godel_enc_alpha, FractalEncoder)
-                and isinstance(godel_enc_beta, FractalEncoder)):
+        if not (
+            isinstance(godel_enc_alpha, FractalEncoder)
+            and isinstance(godel_enc_beta, FractalEncoder)
+        ):
             raise TypeError
         else:
             self.ga = godel_enc_alpha
             self.gb = godel_enc_beta
 
-        self.x_leftbounds = np.array([self.ga.encode_sequence(stk_s) for
-                                      stk_s in self.gshift.alpha_dod])
+        self.x_leftbounds = np.array(
+            [self.ga.encode_sequence(stk_s) for stk_s in self.gshift.alpha_dod]
+        )
         self.x_leftbounds.sort()
-        self.y_leftbounds = np.array([self.gb.encode_sequence(inp_s) for
-                                      inp_s in self.gshift.beta_dod])
+        self.y_leftbounds = np.array(
+            [self.gb.encode_sequence(inp_s) for inp_s in self.gshift.beta_dod]
+        )
         self.y_leftbounds.sort()
 
         self.flow_params_x, self.flow_params_y = self.find_flow_parameters()
@@ -455,23 +466,19 @@ class NonlinearDynamicalAutomaton(object):
         """Convert the generalized shift dynamics in dynamics on the plane,
         finding the parameters of the linear transformation for each NDA
         cell."""
-        params_array_x = np.zeros((self.y_leftbounds.size,
-                                   self.x_leftbounds.size, 2))
-        params_array_y = np.zeros((self.y_leftbounds.size,
-                                   self.x_leftbounds.size, 2))
+        params_array_x = np.zeros((self.y_leftbounds.size, self.x_leftbounds.size, 2))
+        params_array_y = np.zeros((self.y_leftbounds.size, self.x_leftbounds.size, 2))
 
-        for dod_symbols in itt.product(self.gshift.alpha_dod,
-                                       self.gshift.beta_dod):
+        for dod_symbols in itt.product(self.gshift.alpha_dod, self.gshift.beta_dod):
             alpha_dod_symbol, beta_dod_symbol = dod_symbols
             enc_alpha = self.ga.encode_sequence(alpha_dod_symbol)
             enc_beta = self.gb.encode_sequence(beta_dod_symbol)
 
             i, j = self.check_cell(enc_alpha, enc_beta, gencoded=True)
 
-            params_x, params_y = self.gshift.lintransf_params(self.ga,
-                                                              self.gb,
-                                                              alpha_dod_symbol,
-                                                              beta_dod_symbol)
+            params_x, params_y = self.gshift.lintransf_params(
+                self.ga, self.gb, alpha_dod_symbol, beta_dod_symbol
+            )
 
             params_array_x[i, j] = params_x
             params_array_y[i, j] = params_y
@@ -486,10 +493,8 @@ class NonlinearDynamicalAutomaton(object):
 
         i, j = self.check_cell(x, y, gencoded=True)
 
-        new_x = (x * self.flow_params_x[i, j, 0] +
-                 self.flow_params_x[i, j, 1])
-        new_y = (y * self.flow_params_y[i, j, 0] +
-                 self.flow_params_y[i, j, 1])
+        new_x = x * self.flow_params_x[i, j, 0] + self.flow_params_x[i, j, 1]
+        new_y = y * self.flow_params_y[i, j, 0] + self.flow_params_y[i, j, 1]
 
         return new_x, new_y
 
