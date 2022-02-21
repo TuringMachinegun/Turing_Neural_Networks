@@ -1,11 +1,11 @@
 ==================================
-neuraltm module documentation
+neuraltm submodule documentation
 ==================================
 
-The module NeuralTM contains classes to build an NDA Neural Network simulating a Turing Machine in real time. 
+The submodule NeuralTM contains classes to build an NDA Neural Network simulating a Turing Machine in real time.
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Code
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-.. automodule:: neuraltm
+.. automodule:: tnnpy.neuraltm
    :members:

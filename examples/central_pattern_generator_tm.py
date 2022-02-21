@@ -13,21 +13,14 @@ the activation of the c_x neuron, and the two gait patterns are
 produced. Results are visualized.
 
 """
-import os.path
-import sys
-import inspect
 
-curr_file_path = os.path.realpath(inspect.getfile(inspect.currentframe()))
-curr_dir_path = os.path.dirname(curr_file_path)
-parent_dir = os.path.join(curr_dir_path, os.path.pardir)
-sys.path.append(parent_dir)
-
-import symdyn
-import neuraltm
 from collections import OrderedDict
+
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
 import numpy as np
+from matplotlib import gridspec
+
+from tnnpy import GodelEncoder, CompactGodelEncoder, TMGeneralizedShift, NonlinearDynamicalAutomaton, NeuralTM
 
 # Turing Machine description (latex syntax for typesetting in plot)
 tape_symbols = ["1", "2", "3", "4"]
@@ -44,22 +37,22 @@ tm_descr = {
 }
 
 # create encoders for states and tape symbols
-ge_q = symdyn.GodelEncoder(states)
-ge_s = symdyn.GodelEncoder(tape_symbols)
+ge_q = GodelEncoder(states)
+ge_s = GodelEncoder(tape_symbols)
 
 # and from the simple encoders, create the actual encoders for the
 # alpha and beta subsequences
-ge_alpha = symdyn.compactGodelEncoder(ge_q, ge_s)
+ge_alpha = CompactGodelEncoder(ge_q, ge_s)
 ge_beta = ge_s
 
 # create Generalized Shift from machine description...
-tm_gs = symdyn.TMGeneralizedShift(states, tape_symbols, tm_descr)
+tm_gs = TMGeneralizedShift(states, tape_symbols, tm_descr)
 
 # ...then NDA from the Generalized Shift and encoders...
-nda = symdyn.NonlinearDynamicalAutomaton(tm_gs, ge_alpha, ge_beta)
+nda = NonlinearDynamicalAutomaton(tm_gs, ge_alpha, ge_beta)
 
 # ... and finally the R-ANN simulating the TM from the NDA
-tm_nn = neuraltm.NeuralTM(nda)
+tm_nn = NeuralTM(nda)
 
 # set initial conditions for the computation
 init_state = ge_alpha.encode_sequence(["g", "1"])
@@ -101,7 +94,6 @@ for i, input_state in enumerate(inp):
 
 
 # ...and plot
-plt.ion()
 timeseries_fig = plt.figure()
 gs = gridspec.GridSpec(
     nrows=6,

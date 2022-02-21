@@ -13,19 +13,11 @@ Finally, the dynamics of the R-ANN is simulated from initial
 conditions and visualized.
 
 """
-import os.path
-import sys
-import inspect
 
-curr_file_path = os.path.realpath(inspect.getfile(inspect.currentframe()))
-curr_dir_path = os.path.dirname(curr_file_path)
-parent_dir = os.path.join(curr_dir_path, os.path.pardir)
-sys.path.append(parent_dir)
-
-import symdyn
-import neuraltm
 import matplotlib.pyplot as plt
 import numpy as np
+
+from tnnpy import NeuralTM, GodelEncoder, CompactGodelEncoder, TMGeneralizedShift, NonlinearDynamicalAutomaton
 
 # Turing Machine description (latex syntax for typesetting in plot)
 tape_symbols = ["1", "2", "3", "4"]
@@ -42,22 +34,22 @@ tm_descr = {
 }
 
 # create encoders for states and tape symbols
-ge_q = symdyn.GodelEncoder(states)
-ge_s = symdyn.GodelEncoder(tape_symbols)
+ge_q = GodelEncoder(states)
+ge_s = GodelEncoder(tape_symbols)
 
 # and from the simple encoders, create the actual encoders for the
 # alpha and beta subsequences
-ge_alpha = symdyn.compactGodelEncoder(ge_q, ge_s)
+ge_alpha = CompactGodelEncoder(ge_q, ge_s)
 ge_beta = ge_s
 
 # create Generalized Shift from machine description...
-tm_gs = symdyn.TMGeneralizedShift(states, tape_symbols, tm_descr)
+tm_gs = TMGeneralizedShift(states, tape_symbols, tm_descr)
 
 # ...then NDA from the Generalized Shift and encoders...
-nda = symdyn.NonlinearDynamicalAutomaton(tm_gs, ge_alpha, ge_beta)
+nda = NonlinearDynamicalAutomaton(tm_gs, ge_alpha, ge_beta)
 
 # ... and finally the R-ANN simulating the TM from the NDA
-tm_nn = neuraltm.NeuralTM(nda)
+tm_nn = NeuralTM(nda)
 
 # set initial conditions for the computation
 init_state = ge_alpha.encode_sequence(["g", "1"])
@@ -101,7 +93,6 @@ g_rd_y = np.random.uniform(0, 0.25, size=n_init_conds)
 gall_means, gall_std = rand_cloud_run(g_rd_x, g_rd_y, n_iter)
 
 # Plot syntetic ERPs
-plt.ion()
 plt.figure(figsize=[8, 4])
 plt.style.use("ggplot")
 
@@ -122,3 +113,4 @@ plt.xlabel("Time step")
 plt.ylabel("Mean network activation")
 plt.legend()
 plt.tight_layout()
+plt.show()

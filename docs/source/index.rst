@@ -22,3 +22,7 @@
 
    neuraltm_docs
 
+   plotting_docs
+
+   utils_docs
+

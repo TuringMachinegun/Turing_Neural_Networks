@@ -1,8 +1,9 @@
 Introduction
 ============
 
-This files documents the code used in the paper "From Turing Machines
-to Neural Networks", implementing the presented mapping. In the
+This files documents the code used in the paper
+[A modular architecture for transparent computation in Recurrent Neural Networks](https://arxiv.org/pdf/1609.01926.pdf),
+implementing the presented mapping. In the
 example included with the code it is possible to observe how to create
 a Neural Network simulating the computation of any arbitrary Turing
 Machine given the Machine description.

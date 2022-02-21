@@ -1,12 +1,11 @@
-__author__ = "Giovanni Sirio Carmantini"
-__version__ = 0.1
-
 """
 
 """
+
+import itertools as itt
+from typing import List, Union
 
 import numpy as np
-import itertools as itt
 
 
 def as_list(arg):
@@ -99,7 +98,7 @@ class GodelEncoder(FractalEncoder):
         return np.array([left_bound, right_bound]) * rescale_factor
 
 
-class compactGodelEncoder(FractalEncoder):
+class CompactGodelEncoder(FractalEncoder):
 
     """Create Godel Encoder as described in our submitted paper.
 
@@ -335,7 +334,13 @@ class TMGeneralizedShift(AbstractGeneralizedShift):
 
         return new_alpha, new_beta
 
-    def lintransf_params(self, ge_alpha, ge_beta, alpha, beta):
+    def lintransf_params(
+            self,
+            ge_alpha: CompactGodelEncoder,
+            ge_beta: GodelEncoder,
+            alpha: List[str],
+            beta: List[str],
+    ):
         """Return two arrays containing respectively the x parameters and the
         y parameters of the linear transformation representing the GS
         action on the symbologram given a dotted sequence.
@@ -414,7 +419,12 @@ class NonlinearDynamicalAutomaton(object):
 
     """
 
-    def __init__(self, generalized_shift, godel_enc_alpha, godel_enc_beta):
+    def __init__(
+            self,
+            generalized_shift: AbstractGeneralizedShift,
+            godel_enc_alpha: Union[GodelEncoder, CompactGodelEncoder],
+            godel_enc_beta: GodelEncoder
+    ):
 
         if not isinstance(generalized_shift, AbstractGeneralizedShift):
             raise TypeError
@@ -442,7 +452,7 @@ class NonlinearDynamicalAutomaton(object):
         self.flow_params_x, self.flow_params_y = self.find_flow_parameters()
         self.vflow = np.vectorize(self.flow)
 
-    def check_cell(self, x, y, gencoded=False):
+    def check_cell(self, x: float, y: float, gencoded: bool = False):
         """Return the coordinates i,j  of the input on the unit square
         partition.
 
@@ -485,7 +495,7 @@ class NonlinearDynamicalAutomaton(object):
 
         return params_array_x, params_array_y
 
-    def flow(self, x, y):
+    def flow(self, x: float, y: float):
         """
         Given :math:`(x_t,y_t)` return
             :math:`\Psi(x_t, y_t) = (x_{t+1}, y_{t+1})`
@@ -498,7 +508,7 @@ class NonlinearDynamicalAutomaton(object):
 
         return new_x, new_y
 
-    def iterate(self, init_x, init_y, n_iterations):
+    def iterate(self, init_x: float, init_y: float, n_iterations: int):
         """
         Apply :math:`\Psi^n(x_0, y_0)`,
             where :math:`x_0` = init_x, :math:`y_0`

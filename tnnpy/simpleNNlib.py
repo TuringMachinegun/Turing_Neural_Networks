@@ -1,8 +1,6 @@
-__author__ = "Giovanni Sirio Carmantini"
-__version__ = 0.1
+from collections import defaultdict
 
 import numpy as np
-from collections import defaultdict
 
 
 class AbstractNNLayer(object):
@@ -21,10 +19,10 @@ class AbstractNNLayer(object):
         initialized
     """
 
-    def __init__(self, n_units, initial_values=[]):
+    def __init__(self, n_units: int, initial_values=None):
         self.n_units = n_units
         self.connections = []
-        if not initial_values:
+        if initial_values is None or not initial_values:
             self.activation = np.zeros(n_units)
         else:
             self.activation = np.array(initial_values)
@@ -44,7 +42,7 @@ class AbstractNNLayer(object):
         self.connections.append((from_layer, conn_mat))
         return conn_mat
 
-    def sum_input(self):
+    def sum_input(self) -> np.ndarray:
         """Computes the input contribution from connected layers."""
         running_sum = np.zeros(self.n_units)
         if self.connections:
@@ -74,9 +72,10 @@ class HeavisideLayer(AbstractNNLayer):
         otherwise it's False and :math:`H_i(-c_i)=0`.
     """
 
-    def __init__(self, n_units, centers, inclusive=[]):
+    def __init__(self, n_units, centers, inclusive=None):
         AbstractNNLayer.__init__(self, n_units)
         self.centers = np.array(centers)
+        inclusive = [] if inclusive is None else inclusive
         self.inclusive = (
             np.array(inclusive, dtype=bool)
             if inclusive
@@ -107,7 +106,7 @@ class RampLayer(AbstractNNLayer):
     :param initial_values: initial activation values
     """
 
-    def __init__(self, n_units, biases=0, initial_values=[]):
+    def __init__(self, n_units, biases=0, initial_values=None):
         AbstractNNLayer.__init__(self, n_units, initial_values)
         self.biases = biases
 

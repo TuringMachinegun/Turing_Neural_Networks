@@ -1,7 +1,21 @@
 import itertools as itt
+from typing import List, Tuple, Union
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Rectangle
+
+from tnnpy.symdyn import GodelEncoder, CompactGodelEncoder
 
 
-def plot_sym(ax, alpha_symbols, beta_symbols, ge_alpha, ge_beta, TM=True):
+def plot_symbologram(
+        ax: plt.Axes,
+        alpha_symbols: List[str],
+        beta_symbols: List[str],
+        ge_alpha: GodelEncoder,
+        ge_beta: Union[GodelEncoder, CompactGodelEncoder],
+        TM: bool = True):
+    """Plot symbologram"""
     if TM:
         state_ticks_xpos = [
             ge_alpha.ge_q.encode_sequence(state) for state in alpha_symbols
@@ -79,3 +93,13 @@ def plot_sym(ax, alpha_symbols, beta_symbols, ge_alpha, ge_beta, TM=True):
     ax.grid(False)
 
     return ax
+
+
+def plot_cylinders(ax: plt.Axes, cylinders_2d: List[Tuple[np.ndarray, np.ndarray]]):
+    """Plot cylinder sets on ax."""
+    for cylinder in cylinders_2d:
+        x_cyl, y_cyl = cylinder
+        x, w_x = x_cyl[0], x_cyl[1] - x_cyl[0]
+        y, w_y = y_cyl[0], y_cyl[1] - y_cyl[0]
+        rect = Rectangle((x, y), w_x, w_y, facecolor="orange", edgecolor="black", zorder=5)
+        ax.add_patch(rect)

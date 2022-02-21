@@ -1,8 +1,9 @@
-__author__ = "Giovanni Sirio Carmantini"
-__version__ = 0.1
+from typing import Optional
 
-import simpleNNlib as snn
 import numpy as np
+
+import tnnpy.simpleNNlib as snn
+from tnnpy.symdyn import NonlinearDynamicalAutomaton
 
 
 class NeuralTM:
@@ -14,7 +15,7 @@ class NeuralTM:
 
     """
 
-    def __init__(self, nda, cylinder_sets=False):
+    def __init__(self, nda: NonlinearDynamicalAutomaton, cylinder_sets: bool = False):
 
         self.cylinder_sets = cylinder_sets
 
@@ -280,11 +281,14 @@ class NeuralTM:
 
         return y_out_conn
 
-    def set_init_cond(self, init_x, init_y):
+    def set_init_cond(self, init_x: np.ndarray, init_y: np.ndarray):
         self.MCLx.activation[:] = np.array(init_x)
         self.MCLy.activation[:] = np.array(init_y)
 
-    def run_net(self, init_x=None, init_y=None, n_iterations=1):
+    def run_net(
+            self,
+            init_x: Optional[np.ndarray] = None,
+            init_y: Optional[np.ndarray] =None, n_iterations=1):
         """Run the network, given the initial values for the x and y input
         neurons and the number of iterations
 

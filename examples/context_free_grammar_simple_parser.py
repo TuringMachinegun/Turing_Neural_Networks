@@ -12,21 +12,11 @@ Finally, the R-ANN dynamics is simulated from given initial conditions
 and visualized.
 
 """
-import os.path
-import sys
-import inspect
-
-curr_file_path = os.path.realpath(inspect.getfile(inspect.currentframe()))
-curr_dir_path = os.path.dirname(curr_file_path)
-parent_dir = os.path.join(curr_dir_path, os.path.pardir)
-sys.path.append(parent_dir)
-
-import symdyn
-import neuraltm
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-from plot_symbologram import plot_sym
 import numpy as np
+from matplotlib.patches import Rectangle
+
+from tnnpy import GodelEncoder, SimpleCFGeneralizedShift, NonlinearDynamicalAutomaton, NeuralTM, plot_symbologram
 
 # CFG description
 input_symbols = ["NP", "V"]
@@ -37,16 +27,16 @@ parser_descr = {
 }
 
 # Godel Encoders
-ge_s = symdyn.GodelEncoder(stack_symbols)
-ge_i = symdyn.GodelEncoder(input_symbols)
+ge_s = GodelEncoder(stack_symbols)
+ge_i = GodelEncoder(input_symbols)
 
 # CFG -> GS
-cfg_gs = symdyn.SimpleCFGeneralizedShift(stack_symbols, input_symbols, parser_descr)
+cfg_gs = SimpleCFGeneralizedShift(stack_symbols, input_symbols, parser_descr)
 # GS -> NDA
-nda = symdyn.NonlinearDynamicalAutomaton(cfg_gs, ge_s, ge_i)
+nda = NonlinearDynamicalAutomaton(cfg_gs, ge_s, ge_i)
 
 # NDA -> R-ANN
-cfg_nn = neuraltm.NeuralTM(nda, cylinder_sets=True)
+cfg_nn = NeuralTM(nda, cylinder_sets=True)
 
 # initial conditions
 init_stack = ge_s.encode_cylinder("S")
@@ -58,13 +48,12 @@ cfg_states = cfg_nn.run_net(init_x=init_stack, init_y=init_input, n_iterations=6
 
 # and plot
 base_z_order = 10
-plt.ion()
 plt.style.use("ggplot")
 fig = plt.figure(figsize=[5, 5])
 ax2 = plt.axes(aspect="equal")
 ax2.axis([0, 1, 0, 1])
 
-plot_sym(ax2, stack_symbols, input_symbols, ge_s, ge_i, TM=False)
+plot_symbologram(ax2, stack_symbols, input_symbols, ge_s, ge_i, TM=False)
 
 x_states, y_states = zip(*cfg_states)
 ax2.set_xlabel("$c_x$ activation", size=15)
@@ -75,7 +64,7 @@ plt.tight_layout()
 x_cell_w = nda.x_leftbounds[1] - nda.x_leftbounds[0]
 y_cell_w = nda.y_leftbounds[1] - nda.y_leftbounds[0]
 
-def run(plot_cells=False):
+def run():
     """
     :param plot_cells: If True, plot the whole cell containing the current state,
        rather than the rectangle corresponding to its cylinder representation.
@@ -85,14 +74,9 @@ def run(plot_cells=False):
         if np.array_equal(cfg_state, states_old):
             break
 
-        if plot_cells:
-            y_cell, x_cell = nda.check_cell(cfg_state[0][0], cfg_state[1][0], gencoded=True)
-            x, y = nda.x_leftbounds[x_cell], nda.y_leftbounds[y_cell]
-            w_x, w_y = x_cell_w, y_cell_w
-        else:
-            x, y = cfg_state[0][0], cfg_state[1][0]
-            w_x = cfg_state[0][1] - x
-            w_y = cfg_state[1][1] - y
+        x, y = cfg_state[0][0], cfg_state[1][0]
+        w_x = cfg_state[0][1] - x
+        w_y = cfg_state[1][1] - y
 
         rect = Rectangle((x, y), w_x, w_y, facecolor="orange", edgecolor="black", zorder=base_z_order + i)
         ax2.add_patch(rect)
@@ -110,7 +94,7 @@ def run(plot_cells=False):
         plt.pause(1)
 
 
-run(plot_cells=False)
+run()
 
 print(
     "total number of neurons: {}".format(
@@ -121,3 +105,4 @@ print(
         + cfg_nn.MCLy.n_units
     )
 )
+plt.show()

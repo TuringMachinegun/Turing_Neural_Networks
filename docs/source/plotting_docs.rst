@@ -1,12 +1,12 @@
 =======================================
-simpleNNlib submodule documentation
+plotting submodule documentation
 =======================================
 
-The simpleNNlib submodule contains classes to build Neural Networks with saturated-linear and Heaviside activation functions.
+The plotting submodule contains utility functions for plotting.
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Code
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. automodule:: tnnpy.simpleNNlib
+.. automodule:: tnnpy.plotting
    :members:

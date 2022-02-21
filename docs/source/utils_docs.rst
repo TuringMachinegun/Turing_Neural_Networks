@@ -1,12 +1,12 @@
 =======================================
-simpleNNlib submodule documentation
+utils submodule documentation
 =======================================
 
-The simpleNNlib submodule contains classes to build Neural Networks with saturated-linear and Heaviside activation functions.
+The utility submodule contains generic utility functions.
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Code
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. automodule:: tnnpy.simpleNNlib
+.. automodule:: tnnpy.utils
    :members:
