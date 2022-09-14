@@ -15,9 +15,10 @@ class NeuralTM:
 
     """
 
-    def __init__(self, nda: NonlinearDynamicalAutomaton, cylinder_sets: bool = False):
+    def __init__(self, nda: NonlinearDynamicalAutomaton, cylinder_sets: bool = False, label: Optional[str]=None):
 
         self.cylinder_sets = cylinder_sets
+        self.label = "" if label is None else label
 
         if self.cylinder_sets:
             self.d_factor = 2
@@ -40,16 +41,20 @@ class NeuralTM:
 
         # construct input layer
 
-        self.MCLx = snn.RampLayer(self.d_factor, initial_values=[0.0] * self.d_factor)
-        self.MCLy = snn.RampLayer(self.d_factor, initial_values=[0.0] * self.d_factor)
+        self.MCLx = snn.RampLayer(self.d_factor,
+                                  initial_values=[0.0] * self.d_factor,
+                                  label="%s->MCLx" % self.label)
+        self.MCLy = snn.RampLayer(self.d_factor,
+                                  initial_values=[0.0] * self.d_factor,
+                                  label="%s->MCLy" % self.label)
 
         # construct cell selection layer
 
         self.BSLbx = snn.HeavisideLayer(
-            self.x_nsymbols, centers=self.x_leftbounds, inclusive=[1] * self.x_nsymbols
+            self.x_nsymbols, biases=-self.x_leftbounds, inclusive=[1] * self.x_nsymbols
         )
         self.BSLby = snn.HeavisideLayer(
-            self.y_nsymbols, centers=self.y_leftbounds, inclusive=[1] * self.y_nsymbols
+            self.y_nsymbols, biases=-self.y_leftbounds, inclusive=[1] * self.y_nsymbols
         )
 
         if self.cylinder_sets:
@@ -66,13 +71,15 @@ class NeuralTM:
         # construct linear transformation layer
 
         if self.cylinder_sets:
-            self.LTL = snn.RampLayer(
-                self.nbranches * 2 * 2, biases=self.LTL_biases_from_params() - self.h
-            )
+            self.LTL = snn.RampLayer(self.nbranches * 2 * 2,
+                                     biases=self.LTL_biases_from_params()
+                                     - self.h,
+                                     label="%s->LTL" % self.label)
         else:
-            self.LTL = snn.RampLayer(
-                self.nbranches * 2, biases=self.LTL_biases_from_params() - self.h
-            )
+            self.LTL = snn.RampLayer(self.nbranches * 2,
+                                     biases=self.LTL_biases_from_params()
+                                     - self.h,
+                                     label="%s->LTL" % self.label)
 
         BSLbx_LTL_cnmat = self.cn_BSLbx_LTL()
         BSLby_LTL_cnmat = self.cn_BSLby_LTL()
@@ -88,6 +95,12 @@ class NeuralTM:
         LTL_MCLy_cnmat = self.cn_LTL_MCLy()
         snn.Connection(self.LTL, self.MCLx, LTL_MCLx_cnmat)
         snn.Connection(self.LTL, self.MCLy, LTL_MCLy_cnmat)
+
+        self.layers = {"MCLx": self.MCLx,
+                       "MCLy": self.MCLy,
+                       "BSLbx": self.BSLbx,
+                       "BSLby": self.BSLby,
+                       "LTL": self.LTL}
 
     def cn_BSLbx_LTL(self):
         """Generate the connection matrix between the x cell selection layer

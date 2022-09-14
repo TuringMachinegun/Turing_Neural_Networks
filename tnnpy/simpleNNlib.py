@@ -1,6 +1,8 @@
-from collections import defaultdict
+__author__ = 'Giovanni Sirio Carmantini'
+__version__ = 0.1
 
 import numpy as np
+from collections import defaultdict
 
 
 class AbstractNNLayer(object):
@@ -19,18 +21,21 @@ class AbstractNNLayer(object):
         initialized
     """
 
-    def __init__(self, n_units: int, initial_values=None):
+    def __init__(self, n_units, biases=None, initial_values=[], label=None):
         self.n_units = n_units
+        self.biases = np.array(
+            biases, dtype=np.float) if biases is not None else np.zeros(n_units, dtype=np.float)
+        self.activation = np.array(
+            initial_values) if initial_values else np.zeros(n_units)
         self.connections = []
-        if initial_values is None or not initial_values:
-            self.activation = np.zeros(n_units)
-        else:
-            self.activation = np.array(initial_values)
-            if self.activation.size != n_units:
-                raise ValueError("initializing with wrong number of values.")
-        self.transfer_function = (
-            None  # this is the abstract class, need to implement a specific one
-        )
+        if not self.activation.size == self.biases.size == n_units:
+            raise ValueError("initializing with wrong number of values:"
+                             "{} initial_values and {} biases for {} units".format(self.activation.size,
+                                                                                   self.biases.size,
+                                                                                   self.n_units))
+        self.transfer_function = None  # this is the abstract class, need to implement a specific one
+        self.input_sum = np.zeros(self.n_units)
+        self.label = label
 
     def _add_connection(self, from_layer, connection_matrix):
         """
@@ -43,15 +48,19 @@ class AbstractNNLayer(object):
         return conn_mat
 
     def sum_input(self) -> np.ndarray:
-        """Computes the input contribution from connected layers."""
-        running_sum = np.zeros(self.n_units)
+        """
+        Computes the input contribution from connected layers.
+        """
+        self.input_sum[:] = 0
         if self.connections:
             for from_layer, connection_matrix in self.connections:
                 if from_layer.activation.ndim == connection_matrix.ndim == 1:
-                    running_sum += from_layer.activation * connection_matrix
+                    self.input_sum += from_layer.activation * connection_matrix
                 else:
-                    running_sum += np.dot(from_layer.activation, connection_matrix)
-        return running_sum
+                    self.input_sum += np.dot(
+                        from_layer.activation, connection_matrix)
+        self.input_sum += self.biases
+        return self.input_sum
 
     def activate(self):
         """Computes the units activation."""
@@ -59,6 +68,12 @@ class AbstractNNLayer(object):
 
     def __getitem__(self, item):
         return LayerSlice(self, item)  # returns activation of item
+
+    def __str__(self):
+        if self.label is not None:
+            return self.label
+        else:
+            return repr(self)
 
 
 class HeavisideLayer(AbstractNNLayer):
@@ -72,28 +87,23 @@ class HeavisideLayer(AbstractNNLayer):
         otherwise it's False and :math:`H_i(-c_i)=0`.
     """
 
-    def __init__(self, n_units, centers, inclusive=None):
-        AbstractNNLayer.__init__(self, n_units)
-        self.centers = np.array(centers)
-        inclusive = [] if inclusive is None else inclusive
-        self.inclusive = (
-            np.array(inclusive, dtype=bool)
-            if inclusive
-            else np.zeros(n_units, dtype=bool)
-        )
-        if not self.centers.size == self.inclusive.size == self.n_units:
+    def __init__(self, n_units, biases=None, inclusive=[], label=None):
+        AbstractNNLayer.__init__(self, n_units, biases=biases, label=label)
+        self.inclusive = np.array(
+            inclusive, dtype=bool) if inclusive else np.zeros(n_units, dtype=bool)
+        if not self.inclusive.size == self.n_units:
             raise ValueError("Array must be of the same size as layer.")
         self.exclusive = np.invert(self.inclusive)
 
     def activate(self):
-        """Computes the units activation"""
+        """
+        Computes the units activation
+        """
         inp_sum = self.sum_input()
         self.activation[self.inclusive] = (
-            inp_sum[self.inclusive] >= self.centers[self.inclusive]
-        ).astype(int)
+            inp_sum[self.inclusive] >= 0).astype(int)
         self.activation[self.exclusive] = (
-            inp_sum[self.exclusive] > self.centers[self.exclusive]
-        ).astype(int)
+            inp_sum[self.exclusive] > 0).astype(int)
         return self.activation
 
 
@@ -106,12 +116,12 @@ class RampLayer(AbstractNNLayer):
     :param initial_values: initial activation values
     """
 
-    def __init__(self, n_units, biases=0, initial_values=None):
-        AbstractNNLayer.__init__(self, n_units, initial_values)
-        self.biases = biases
+    def __init__(self, n_units, biases=None, initial_values=[], label=None):
+        AbstractNNLayer.__init__(
+            self, n_units, biases=biases, initial_values=initial_values, label=label)
 
     def activate(self):
-        self.activation = np.clip(self.sum_input() + self.biases, 0, 1)
+        self.activation = np.clip(self.sum_input(), 0, 1)
         return self.activation
 
 
