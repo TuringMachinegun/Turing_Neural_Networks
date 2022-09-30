@@ -8,7 +8,7 @@ __version__ = 0.1
 import itertools as itt
 from collections import Counter
 from copy import copy
-from typing import List, Union
+from typing import List, Union, Tuple
 
 import numpy as np
 
@@ -792,7 +792,9 @@ class NonlinearDynamicalAutomaton(object):
         generalized_shift: AbstractGeneralizedShift,
         godel_enc_alpha: Union[GodelEncoder, CompactGodelEncoder],
         godel_enc_beta: GodelEncoder,
+        cylinder_sets: bool = False,
     ):
+        self.cylinder_sets = cylinder_sets
 
         if not isinstance(generalized_shift, AbstractGeneralizedShift):
             raise TypeError
@@ -824,7 +826,12 @@ class NonlinearDynamicalAutomaton(object):
         self.flow_params_x, self.flow_params_y = self.find_flow_parameters()
         self.vflow = np.vectorize(self.flow)
 
-    def check_cell(self, x: float, y: float, gencoded: bool = False):
+    def check_cell(
+            self,
+            x: Union[float, Tuple[float, float]],
+            y: Union[float, Tuple[float, float]],
+            gencoded: bool = False
+    ):
         """Return the coordinates i,j  of the input on the unit square
         partition.
 
@@ -886,13 +893,22 @@ class NonlinearDynamicalAutomaton(object):
         """
 
         i, j = self.check_cell(x, y, gencoded=True)
+        if self.cylinder_sets:  # we apply the linear transformation defined by the left bound
+            i, j = i[0], j[0]
+        else:
+            assert isinstance(i, int) and isinstance(j, int)
 
         new_x = x * self.flow_params_x[i, j, 0] + self.flow_params_x[i, j, 1]
         new_y = y * self.flow_params_y[i, j, 0] + self.flow_params_y[i, j, 1]
 
         return new_x, new_y
 
-    def iterate(self, init_x: float, init_y: float, n_iterations: int):
+    def iterate(
+            self,
+            init_x: Union[float, Tuple[float, float]],
+            init_y: Union[float, Tuple[float, float]],
+            n_iterations: int
+    ):
         """
         Apply :math:`\Psi^n(x_0, y_0)`,
             where :math:`x_0` = init_x, :math:`y_0`
