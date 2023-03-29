@@ -33,7 +33,7 @@ ge_i = GodelEncoder(input_symbols)
 # CFG -> GS
 cfg_gs = SimpleCFGeneralizedShift(stack_symbols, input_symbols, parser_descr)
 # GS -> NDA
-nda = NonlinearDynamicalAutomaton(cfg_gs, ge_s, ge_i)
+nda = NonlinearDynamicalAutomaton(cfg_gs, ge_s, ge_i, cylinder_sets=True)
 
 # NDA -> R-ANN
 cfg_nn = NeuralTM(nda, cylinder_sets=True)
